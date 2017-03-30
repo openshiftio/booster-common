@@ -45,7 +45,7 @@ public class OpenShiftTestAssistant {
     private final String project;
     private String applicationName;
     private Map<String, NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable<HasMetadata, Boolean>> created
-            = new LinkedHashMap<>();
+        = new LinkedHashMap<>();
 
     public OpenShiftTestAssistant() {
         client = new DefaultKubernetesClient().adapt(OpenShiftClient.class);
@@ -67,27 +67,20 @@ public class OpenShiftTestAssistant {
         applicationName = System.getProperty("app.name");
 
         List<? extends HasMetadata> entities
-                = deploy("application", new File("target/classes/META-INF/fabric8/openshift.yml"));
+            = deploy("application", new File("target/classes/META-INF/fabric8/openshift.yml"));
 
         Optional<String> first = entities.stream()
-                .filter(hm -> hm instanceof DeploymentConfig)
-                .map(hm -> (DeploymentConfig) hm)
-                .map(dc -> dc.getMetadata()
-                        .getName())
-                .findFirst();
+            .filter(hm -> hm instanceof DeploymentConfig)
+            .map(hm -> (DeploymentConfig) hm)
+            .map(dc -> dc.getMetadata().getName()).findFirst();
         if (applicationName == null && first.isPresent()) {
             applicationName = first.get();
         }
 
-        Route route = client.adapt(OpenShiftClient.class)
-                .routes()
-                .inNamespace(project)
-                .withName(applicationName)
-                .get();
+        Route route = client.adapt(OpenShiftClient.class).routes()
+            .inNamespace(project).withName(applicationName).get();
         assertThat(route).isNotNull();
-        RestAssured.baseURI = "http://" + Objects.requireNonNull(route)
-                .getSpec()
-                .getHost();
+        RestAssured.baseURI = "http://" + Objects.requireNonNull(route).getSpec().getHost();
         System.out.println("Route url: " + RestAssured.baseURI);
 
         return applicationName;
@@ -98,34 +91,24 @@ public class OpenShiftTestAssistant {
         Collections.reverse(keys);
         for (String key : keys) {
             System.out.println("Deleting " + key);
-            created.remove(key)
-                    .delete();
+            created.remove(key).delete();
         }
     }
 
     public void awaitApplicationReadinessOrFail() {
-        await().atMost(5, TimeUnit.MINUTES)
-                .until(() -> {
-                            List<Pod> list = client.pods()
-                                    .inNamespace(project)
-                                    .list()
-                                    .getItems();
-                            return list.stream()
-                                    .filter(pod ->
-                                            pod.getMetadata()
-                                                    .getName()
-                                                    .startsWith(applicationName))
-                                    .filter(this::isRunning)
-                                    .collect(Collectors.toList())
-                                    .size() >= 1;
-                        }
-                );
+        await().atMost(5, TimeUnit.MINUTES).until(() -> {
+                List<Pod> list = client.pods().inNamespace(project).list().getItems();
+                return list.stream().filter(pod ->
+                    pod.getMetadata().getName().startsWith(applicationName))
+                    .filter(this::isRunning)
+                    .collect(Collectors.toList()).size() >= 1;
+            }
+        );
 
     }
 
     private boolean isRunning(Pod pod) {
-        return "running".equalsIgnoreCase(pod.getStatus()
-                .getPhase());
+        return "running".equalsIgnoreCase(pod.getStatus().getPhase());
     }
 
 
@@ -141,19 +124,14 @@ public class OpenShiftTestAssistant {
         return applicationName;
     }
 
-    public void awaitPodReadinessOrFail(Predicate<Pod> filter) {
-        await().atMost(5, TimeUnit.MINUTES)
-                .until(() -> {
-                            List<Pod> list = client.pods()
-                                    .inNamespace(project)
-                                    .list()
-                                    .getItems();
-                            return list.stream()
-                                    .filter(filter)
-                                    .filter(this::isRunning)
-                                    .collect(Collectors.toList())
-                                    .size() >= 1;
-                        }
-                );
-    }
+  public void awaitPodReadinessOrFail(Predicate<Pod> filter) {
+    await().atMost(5, TimeUnit.MINUTES).until(() -> {
+        List<Pod> list = client.pods().inNamespace(project).list().getItems();
+        return list.stream()
+          .filter(filter)
+          .filter(this::isRunning)
+          .collect(Collectors.toList()).size() >= 1;
+      }
+    );
+  }
 }
