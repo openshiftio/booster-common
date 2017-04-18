@@ -16,11 +16,16 @@
 
 package io.openshift.booster.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import static com.jayway.awaitility.Awaitility.await;
+
+import com.jayway.restassured.RestAssured;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,18 +36,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import com.jayway.restassured.RestAssured;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
-
-import static com.jayway.awaitility.Awaitility.await;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -97,18 +98,41 @@ public class OpenShiftTestAssistant {
         return applicationName;
     }
 
+
     public void cleanup() {
         List<String> keys = new ArrayList<>(created.keySet());
-        Collections.reverse(keys);
+        keys.sort(String::compareTo);
         for (String key : keys) {
             created.remove(key)
                     .stream()
                     .sorted(Comparator.comparing(HasMetadata::getKind))
                     .forEach(metadata -> {
-                        boolean isDeploymentConfigOrReplicationController = metadata instanceof DeploymentConfig || metadata instanceof ReplicationController;
                         System.out.println(String.format("Deleting %s : %s", key, metadata.getKind()));
-                        client.resource(metadata).withGracePeriod(0).cascading(!isDeploymentConfigOrReplicationController).delete();
+                        deleteWithRetries(metadata);
                     });
+        }
+    }
+
+    private void deleteWithRetries(HasMetadata metadata) {
+        int retryCounter = 0;
+        boolean deleteUnsucessful = true;
+        do {
+            retryCounter++;
+            try {
+                // returns false when successfully deleted
+                deleteUnsucessful = client.resource(metadata).withGracePeriod(0).delete();
+            } catch (KubernetesClientException e) {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(500);
+                } catch (InterruptedException interrupted) {
+                    throw new RuntimeException(interrupted);
+                }
+                e.printStackTrace();
+                System.out.println(String.format("Error deleting resource %s %s retrying #%s ", metadata.getKind(), metadata.getMetadata().getName(), retryCounter));
+            }
+        } while (retryCounter < 3 && deleteUnsucessful);
+        if (deleteUnsucessful) {
+            throw new RuntimeException("Unable to delete " + metadata);
         }
     }
 
