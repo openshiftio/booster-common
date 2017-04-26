@@ -26,8 +26,7 @@ echo -e "${BLUE}Issuing a verification build${NC}"
 mvn clean verify > verification.log
 
 echo -e "${BLUE}Committing changes${NC}"
-git add pom.xml
-git commit -m "Bumping version to ${NEW_VERSION}"
+git commit -am "Bumping version to ${NEW_VERSION}"
 
 TAG="v${NEW_VERSION}"
 echo -e "${BLUE}Creating the tag ${YELLOW}${TAG}${NC}"
@@ -38,12 +37,10 @@ echo -e "${BLUE}Updating project version to: ${YELLOW}${NEXT_VERSION}${NC}"
 mvn versions:set -DnewVersion=${NEXT_VERSION} > bump-version-dev.log
 
 echo -e "${BLUE}Committing changes${NC}"
-git add pom.xml
-git commit -m "Bumping version to ${NEXT_VERSION}"
+git commit -am "Bumping version to ${NEXT_VERSION}"
 
 echo -e "${BLUE}Pushing changes${NC}"
 git push origin master --tags
 
 echo -e "DONE !"
-# Just some cleanup
 rm *.log pom.xml.versionsBackup
