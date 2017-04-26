@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.openshift</groupId>
   <artifactId>booster-common</artifactId>
-  <version>2</version>
+  <version>3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>OpenShift.io Booster Common</name>
@@ -57,7 +57,7 @@
     <url>https://github.com/openshiftio</url>
     <connection>scm:git:https://github.com/openshiftio/booster-common.git</connection>
     <developerConnection>scm:git:git:@github.com:openshiftio/booster-common.git</developerConnection>
-    <tag>2</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
