@@ -41,6 +41,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
+import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -175,5 +176,46 @@ public class OpenShiftTestAssistant {
                                                               .collect(Collectors.toList()).size() >= 1;
                                                   }
         );
+    }
+
+    public void scale(final int replicas) {
+        System.out.println(String.format("Scaling replicas from %s to %s.", getPods("deploymentconfig").size(), replicas));
+        this.client
+                .deploymentConfigs()
+                .inNamespace(this.project)
+                .withName(this.applicationName)
+                .scale(replicas);
+
+        // ideally, we'd look at deployment config's status.availableReplicas field,
+        // but that's only available since OpenShift 3.5
+        await().atMost(5, TimeUnit.MINUTES)
+                .until(() -> {
+                    final List<Pod> pods = getPods("deploymentconfig");
+                    try {
+                        return pods.size() == replicas && pods.stream()
+                                .allMatch(Readiness::isPodReady);
+                    } catch (final IllegalStateException e) {
+                        // the 'Ready' condition can be missing sometimes, in which case Readiness.isPodReady throws an exception
+                        // here, we'll swallow that exception in hope that the 'Ready' condition will appear later
+                        return false;
+                    }
+                });
+    }
+
+    private List<Pod> getPods(String label) {
+        return this.client
+                .pods()
+                .inNamespace(this.project)
+                .withLabel(label, this.applicationName)
+                .list()
+                .getItems();
+    }
+
+    public DeploymentConfig deploymentConfig() {
+        return this.client
+                .deploymentConfigs()
+                .inNamespace(this.project)
+                .withName(this.applicationName)
+                .get();
     }
 }
