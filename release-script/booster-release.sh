@@ -18,11 +18,16 @@ if [[ "$CURRENT_VERSION" == *-SNAPSHOT ]]
 then
     L=${#CURRENT_VERSION}
     PART=(${CURRENT_VERSION//-/ })
-    NEW_VERSION=${PART[0]}
+    NEW_VERSION_INT=${PART[0]}
     QUALIFIER=${PART[1]}
-    if [[ "$QUALIFIER" != SNAPSHOT ]]
+    SNAPSHOT=${PART[2]}
+    if [[ "$SNAPSHOT" == SNAPSHOT ]]
     then
-        QUALIFIER="${QUALIFIER}-SNAPSHOT"
+        NEW_VERSION="${NEW_VERSION_INT}-${QUALIFIER}"
+        NEXT_VERSION="$(($NEW_VERSION_INT +1))-${QUALIFIER}-SNAPSHOT"
+    else
+        NEW_VERSION="${NEW_VERSION_INT}"
+        NEXT_VERSION="$(($NEW_VERSION_INT +1))-SNAPSHOT"
     fi
 else
     echo -e "${RED} The current version (${CURRENT_VERSION}) is not a SNAPSHOT ${NC}"
@@ -42,7 +47,6 @@ TAG="v${NEW_VERSION}"
 echo -e "${BLUE}Creating the tag ${YELLOW}${TAG}${NC}"
 git tag -a ${TAG} -m "Releasing ${TAG}"
 
-NEXT_VERSION="$(($NEW_VERSION +1))-${QUALIFIER}"
 echo -e "${BLUE}Updating project version to: ${YELLOW}${NEXT_VERSION}${NC}"
 mvn versions:set -DnewVersion=${NEXT_VERSION} > bump-version-dev.log
 
