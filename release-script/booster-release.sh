@@ -49,8 +49,15 @@ mvn versions:set -DnewVersion=${NEXT_VERSION} > bump-version-dev.log
 echo -e "${BLUE}Committing changes${NC}"
 git commit -am "Bumping version to ${NEXT_VERSION}"
 
-echo -e "${BLUE}Pushing changes${NC}"
-git push origin master --tags
+# git status -sb has the following format: ## master...upstream/master
+GIT_STATUS=`git status -sb`
+GIT_STATUS_PARTS=${GIT_STATUS//##/}
+GIT_STATUS_PARTS=(${GIT_STATUS_PARTS//.../ })
+GIT_BRANCH=${GIT_STATUS_PARTS[0]}
+GIT_REMOTE=(${GIT_STATUS_PARTS[1]//\// })
+GIT_REMOTE=${GIT_REMOTE[0]}
+echo -e "${BLUE}Pushing changes to ${YELLOW}${GIT_BRANCH}${BLUE} branch of ${YELLOW}${GIT_REMOTE}${BLUE} remote${NC}"
+git push $GIT_REMOTE $GIT_BRANCH --tags
 
 echo -e "DONE !"
 rm *.log pom.xml.versionsBackup
