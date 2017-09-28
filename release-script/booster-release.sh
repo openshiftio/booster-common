@@ -7,9 +7,24 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 
 if ((`git status -sb | wc -l` != 1)); then
-    echo -e "${RED} You have uncommitted changes, please check (and stash) these changes before running this script ${NC}"
+    echo -e "${RED}You have uncommitted changes, please check (and stash) these changes before running this script${NC}"
     exit 1
 fi
+
+# check that we have proper git information to automatically commit and push
+# git status -sb has the following format: ## master...upstream/master when tracking a remote branch
+GIT_STATUS=`git status -sb`
+GIT_STATUS_PARTS=${GIT_STATUS//##/}
+GIT_STATUS_PARTS=(${GIT_STATUS_PARTS//.../ })
+GIT_BRANCH=${GIT_STATUS_PARTS[0]}
+echo "${GIT_BRANCH}"
+GIT_REMOTE=(${GIT_STATUS_PARTS[1]//\// })
+if [[ "$GIT_REMOTE" == ?? ]]; then
+    echo -e "${RED}Current ${YELLOW}${GIT_BRANCH}${RED} branch is not tracking a remote. Please make sure your branch is tracking a remote (git branch -u <remote name>/<remote branch name>)!${NC}"
+    exit 1
+fi
+GIT_REMOTE=${GIT_REMOTE[0]}
+GIT_BRANCH=${GIT_REMOTE[1]}
 
 CURRENT_VERSION=`mvn help:evaluate -Dexpression=project.version | grep -e '^[^\[]'`
 echo -e "${BLUE}CURRENT VERSION: ${YELLOW} ${CURRENT_VERSION} ${NC}"
@@ -53,13 +68,6 @@ mvn versions:set -DnewVersion=${NEXT_VERSION} > bump-version-dev.log
 echo -e "${BLUE}Committing changes${NC}"
 git commit -am "Bumping version to ${NEXT_VERSION}"
 
-# git status -sb has the following format: ## master...upstream/master
-GIT_STATUS=`git status -sb`
-GIT_STATUS_PARTS=${GIT_STATUS//##/}
-GIT_STATUS_PARTS=(${GIT_STATUS_PARTS//.../ })
-GIT_BRANCH=${GIT_STATUS_PARTS[0]}
-GIT_REMOTE=(${GIT_STATUS_PARTS[1]//\// })
-GIT_REMOTE=${GIT_REMOTE[0]}
 echo -e "${BLUE}Pushing changes to ${YELLOW}${GIT_BRANCH}${BLUE} branch of ${YELLOW}${GIT_REMOTE}${BLUE} remote${NC}"
 git push $GIT_REMOTE $GIT_BRANCH --tags
 
