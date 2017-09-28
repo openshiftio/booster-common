@@ -6,6 +6,11 @@ NC='\033[0m' # No Color
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 
+if ((`git status -sb | wc -l` != 1)); then
+    echo -e "${RED} You have uncommitted changes, please check (and stash) these changes before running this script ${NC}"
+    exit 1
+fi
+
 CURRENT_VERSION=`mvn help:evaluate -Dexpression=project.version | grep -e '^[^\[]'`
 echo -e "${BLUE}CURRENT VERSION: ${YELLOW} ${CURRENT_VERSION} ${NC}"
 
