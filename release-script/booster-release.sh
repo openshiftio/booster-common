@@ -17,7 +17,6 @@ GIT_STATUS=`git status -sb`
 GIT_STATUS_PARTS=${GIT_STATUS//##/}
 GIT_STATUS_PARTS=(${GIT_STATUS_PARTS//.../ })
 GIT_BRANCH=${GIT_STATUS_PARTS[0]}
-echo "${GIT_BRANCH}"
 GIT_REMOTE=(${GIT_STATUS_PARTS[1]//\// })
 if [[ "$GIT_REMOTE" == ?? ]]; then
     echo -e "${RED}Current ${YELLOW}${GIT_BRANCH}${RED} branch is not tracking a remote. Please make sure your branch is tracking a remote (git branch -u <remote name>/<remote branch name>)!${NC}"
