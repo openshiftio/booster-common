@@ -61,7 +61,19 @@ done
 
 for FILE in ${NEW_YAML_FILES[*]}
 do
+    echo -e "${BLUE}Copying ${YELLOW}${FILE}${BLUE} file.${NC}"
     cp /tmp/yaml-sync/$FILE $FILE 2>/dev/null || :
+
+    # If we passed a second argument to this script, attempt to interpret it as a script to run on each synced file.
+    # Note that variables defined in this script will be available to the specified one. So, for example, the following script:
+    # #!/bin/bash
+    # sed -i '' -e 's/1.4.1/1.5.7/g' ${FILE}
+    # will change all instances of the 1.4.1 string to 1.5.7 in the specified file
+    if [ -e "$2" ]; then
+        echo -e "${BLUE}Running ${YELLOW}${2}${BLUE} script on ${YELLOW}${FILE}${BLUE} file.${NC}"
+        source $2
+    fi
+
     git add $FILE
 done
 
