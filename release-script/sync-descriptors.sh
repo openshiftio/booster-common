@@ -59,9 +59,20 @@ do
     git rm $FILE
 done
 
+ptouch() {
+  for p do
+    _dir="$(dirname -- "$p")"
+    mkdir -p -- "$_dir" &&
+      touch -- "$p"
+  done
+}
+
 for FILE in ${NEW_YAML_FILES[*]}
 do
     echo -e "${BLUE}Copying ${YELLOW}${FILE}${BLUE} file.${NC}"
+
+    # make sure target file exists otherwise copy will fail
+    ptouch $FILE
     cp /tmp/yaml-sync/$FILE $FILE 2>/dev/null || :
 
     # If we passed a second argument to this script, attempt to interpret it as a script to run on each synced file.
