@@ -71,4 +71,5 @@ echo -e "${BLUE}Pushing changes to ${YELLOW}${GIT_BRANCH}${BLUE} branch of ${YEL
 git push $GIT_REMOTE $GIT_BRANCH --tags
 
 echo -e "DONE !"
-rm *.log pom.xml.versionsBackup
+rm *.log
+find . -name "*.versionsBackup" -exec rm -f {} \;
