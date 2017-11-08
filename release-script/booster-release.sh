@@ -11,6 +11,9 @@ if ((`git status -sb | wc -l` != 1)); then
     exit 1
 fi
 
+# run mvn help:evaluate once first since it often needs to download stuff which screws up version parsing
+mvn help:evaluate -Dexpression=project.version > /dev/null
+
 # check that we have proper git information to automatically commit and push
 # git status -sb has the following format: ## master...upstream/master when tracking a remote branch
 GIT_STATUS=`git status -sb`
